@@ -7,7 +7,7 @@ fn main() {
 #[derive(Debug, Clone)]
 struct DatabaseEntry {
     key: String,
-    value: i32
+    value: RwSignal<i32>
 }
 
 #[component]
@@ -18,11 +18,11 @@ fn App() -> impl IntoView {
     let (data, set_data) = create_signal(vec![
         DatabaseEntry {
             key: "golden".to_string(),
-            value: 60
+            value: create_rw_signal(60)
         },
         DatabaseEntry {
             key: "retriever".to_string(),
-            value: 160
+            value: create_rw_signal(160)
         }
     ]);
 
@@ -53,17 +53,20 @@ fn App() -> impl IntoView {
 
 
         // iter - complex
-        <button on:click=move |_| set_data.update(|data| {
-            for row in data {
-                row.value *= 2;
-            }
-        })>
+        <button on:click=move |_| {
+            set_data.update(|data| {
+                for row in data {
+                    row.value.update(|val| *val *= 2);
+                }
+            });
+            logging::log!("{:?}", data.get());
+        }>
             "Update Values"
         </button>
         // display data
         <For
             each=data
-            key=|state| (state.key.clone(), state.value)
+            key=|state| state.key.clone()
             // same as children=|child| view! { <p>{child.value}</p> }
             let:child
         >
