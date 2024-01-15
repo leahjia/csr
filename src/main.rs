@@ -4,12 +4,30 @@ fn main() {
     mount_to_body(|| view! { <App/> })
 }
 
+#[derive(Debug, Clone)]
+struct DatabaseEntry {
+    key: String,
+    value: i32
+}
+
 #[component]
 fn App() -> impl IntoView {
     let (count, set_count) = create_signal(0);
     let double_count = move || count() * 2;
 
+    let (data, set_data) = create_signal(vec![
+        DatabaseEntry {
+            key: "golden".to_string(),
+            value: 60
+        },
+        DatabaseEntry {
+            key: "retriever".to_string(),
+            value: 160
+        }
+    ]);
+
     view! {
+        // clickers
         <button
             on:click=move |_| set_count.update(|n| *n += 1)
             class=("btn-blue", move || count() % 2 == 1)
@@ -28,30 +46,29 @@ fn App() -> impl IntoView {
 
         // iter
         <br/>
-        <h3>"Static List"</h3>
-        <StaticList length=5/>
+        // <h3>"Static List"</h3>
+        // <StaticList length=5/>
+        // <h3>"Dynamic List"</h3>
+        // <DynamicList length=5/>
 
-        <h3>"Dynamic List"</h3>
-        <DynamicList length=5/>
-    }
-}
 
-#[component]
-fn StaticList(length: usize) -> impl IntoView {
-    let counters = (1..=length).map(|idx| create_signal(idx));
-    let counter_btns = counters
-        .map(|(count, set_count)| {
-            view! {
-                <li>
-                    <button on:click=move |_| set_count.update(|n| *n += 1)>
-                    {count}
-                    </button>
-                </li>
+        // iter - complex
+        <button on:click=move |_| set_data.update(|data| {
+            for row in data {
+                row.value *= 2;
             }
-        })
-        .collect_view();
-    view! {
-        <ul>{counter_btns}</ul>
+        })>
+            "Update Values"
+        </button>
+        // display data
+        <For
+            each=data
+            key=|state| (state.key.clone(), state.value)
+            // same as children=|child| view! { <p>{child.value}</p> }
+            let:child
+        >
+            <p>{child.key}": "{child.value}</p>
+        </For>
     }
 }
 
@@ -96,6 +113,25 @@ fn DynamicList(length: usize) -> impl IntoView {
                 />
             </ul>
         </div>
+    }
+}
+
+#[component]
+fn StaticList(length: usize) -> impl IntoView {
+    let counters = (1..=length).map(|idx| create_signal(idx));
+    let counter_btns = counters
+        .map(|(count, set_count)| {
+            view! {
+                <li>
+                    <button on:click=move |_| set_count.update(|n| *n += 1)>
+                    {count}
+                </button>
+                    </li>
+            }
+        })
+    .collect_view();
+    view! {
+        <ul>{counter_btns}</ul>
     }
 }
 
